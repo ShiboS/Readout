@@ -1,8 +1,8 @@
 ### Analysis
-Analyse measured data from VNA and IQ mixer with fitting process.
+Analyse measured data from VNA or IQ mixer with fitting.
 
 ### Calculate
-Do calculation of KID from MB theory to all parameters.
+Do calculation of CPW and KID from MB theory to all parameters. (under construction)
 
 ### Measure
 Use PyVISA and GPIB cable to control VNA and LS350/370 temperature controller.
