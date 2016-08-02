@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from lmfit import minimize, Parameters, fit_report
 
 ### Read file
-name_of_file = '-5dBm_3000MHz.csv'
+name_of_file = '../../Device Data/IQMixer/Calibration Data/20160726_BOX_FirstCalibration/0dBm_2300MHz.csv'
 
 result = []
 
@@ -32,8 +32,8 @@ def EllipseFit(params, I, Q):
 params = Parameters()
 params.add('x_c', value= 0, min = -0.2, max = 0.2)
 params.add('y_c', value= 0, min = -0.2, max = 0.2)
-params.add('x_dim', value= 0.1, min = 0.01, max = 0.2)
-params.add('y_dim', value= 0.1, min = 0.01, max = 0.2)
+params.add('x_dim', value= 0.1, min = 0.01, max = 0.3)
+params.add('y_dim', value= 0.1, min = 0.01, max = 0.3)
 params.add('angle', value= -0.2, min = -np.pi, max = np.pi)
 
 # do fit, here with leastsq model

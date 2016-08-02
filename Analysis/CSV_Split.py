@@ -2,11 +2,24 @@
 import csv
 
 data_name = []
-folder = "../../../MeasurementResult/20160616_Nb154nmCry48/"
-name_of_list = "20160616_list.csv"
-global Num_of_Split
-Num_of_Power = 9
-Num_of_KIDs = 10
+parameter = []
+folder = "../../../MeasurementResult/20160729_OMTdelta/"
+date = "20160729"
+name_of_list = date + "_list.csv"
+name_of_para = date + "_parameter.csv"
+
+
+
+with open(folder + name_of_para,'r') as n:
+    for line in n:
+        parameter.append(map(str,line.rstrip('\r\n').split(',')))
+
+StartPower = int(parameter[3][0])
+EndPower = int(parameter[3][1])
+PowerStep = int(parameter[3][2])
+Num_of_Power = int(parameter[2][3])
+Num_of_KIDs = int(parameter[4][1])
+
 
 with open(folder + name_of_list,'r') as n:
     for line in n:
@@ -19,8 +32,8 @@ for filename in data_name:
     file_name_list.append()
 """
 
-def slicing(freqlist, n, Num1):
-    return freqlist[n:n+Num1:1]
+def slicing(freqlist, n, Num):
+    return freqlist[n:n+Num:1]
 #a = slicing(data_name, 0, Num_of_KIDs)
 #print a
 

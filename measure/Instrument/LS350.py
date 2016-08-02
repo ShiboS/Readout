@@ -9,6 +9,7 @@ class LS350():
 
     def whoareyou(self):
         print self.ctrl.query("*IDN?")
+        
     def SetPoint(self, Temp):
         self.ctrl.write("SETP 2, %s" %Temp)
 

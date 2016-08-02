@@ -86,8 +86,8 @@ def Fit_Ellipse(I,Q):
     #          The result is always correct but the angle may be timed with -1
     params.add('x_c', value= I_average, min = -0.2, max = 0.2)
     params.add('y_c', value= Q_average, min = -0.2, max = 0.2)
-    params.add('x_dim', value= I_pktopk, min = 0.001, max = 0.2)
-    params.add('y_dim', value= Q_pktopk, min = 0.001, max = 0.2)
+    params.add('x_dim', value= I_pktopk, min = 0.001, max = 0.3)
+    params.add('y_dim', value= Q_pktopk, min = 0.001, max = 0.3)
     params.add('angle', value= 0, min = -1, max = 1)
 
     # do fit, here with leastsq model

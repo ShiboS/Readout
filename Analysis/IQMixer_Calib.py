@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.patches import Rectangle
  
-folder ='IQMixer_Calib/20160603_1M/'
-RF_Power = '3dBm'
-RF_Freq_Start = 3000# MHz
+folder ='../../Device Data/IQMixer/Calibration Data/20160726_BOX_FirstCalibration/'
+RF_Power = '0dBm'
+RF_Freq_Start = 2000# MHz
 RF_Freq_End = 8000 # MHz
 RF_Freq_Interval = 10 # MHz, RF measurement sample every 10 MHz
 ellipse_array = []
