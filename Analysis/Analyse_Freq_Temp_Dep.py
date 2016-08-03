@@ -215,5 +215,3 @@ try:
     pylab.show()
 except:
     pass
-
-#<end of examples/doc_basic.py>

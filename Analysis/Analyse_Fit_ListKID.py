@@ -1,46 +1,9 @@
 import Analyse_Fit_SingleKID
 import csv
 
-### Read filename list
-data_name = []
-folder = "../../../MeasurementResult/20160616_Nb154nmCry48/"
-readpower = '10dBm'
-
-name_of_list = '20160616_' + readpower + '_list.csv'
-#name_of_list = '20160227' + '_list.csv'
-global Num_of_KID
-Num_of_KID = 10
-BW=1e6
-
-with open(folder + name_of_list,'r') as n:
-    for line in n:
-        data_name.append(map(str,line.rstrip('\n').split(','))) # Remove '\n'
-
-Fit_result = []
-for filename in data_name:
-    #print filename
-    filename = str(filename).replace("[", "").replace("]", "").replace("'", "").replace("\\r", "")+".csv"
-    Fit_result.append(Analyse_Fit_SingleKID.Fit_SingleKID(folder, filename, BW))
-
-
-def slicing(freqlist, n):
-    return freqlist[n-1::Num_of_KID]
+def slicing(freqlist, n, Num_of_KIDs):
+    return freqlist[n-1::Num_of_KIDs]
     
-a = slicing(Fit_result,1)
-b = slicing(Fit_result,2)
-c = slicing(Fit_result,3)
-d = slicing(Fit_result,4)
-
-e = slicing(Fit_result,5)
-f = slicing(Fit_result,6)
-
-g = slicing(Fit_result,7)
-h = slicing(Fit_result,8)
-
-ii = slicing(Fit_result,9)
-j = slicing(Fit_result,10)
-"""
-"""
 def save_fit(data, folder, power):
     name_of_file = folder.replace("../../../MeasurementResult/","").replace("/", "") + "_" + str(data[0][2]) + "_" + power
     f = open(folder + name_of_file + '.csv', 'w')
@@ -52,21 +15,41 @@ def save_fit(data, folder, power):
     # Write number-of-points rows
     for i in range(0, len(data)):
         fwrite.writerow([data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7], data[i][8], data[i][9], data[i][10], data[i][11], (data[i][2]-data[0][2])/data[0][2], (data[i][3]-data[0][3])/data[0][3]])
-        
-save_fit(a, folder, readpower)
-save_fit(b, folder, readpower)
-save_fit(c, folder, readpower)
-save_fit(d, folder, readpower)
 
-save_fit(e, folder, readpower)
-save_fit(f, folder, readpower)
+def Fit_List_KIDs(folder, date, span):
+    name_of_list = date + "_list.csv"
+    name_of_para = date + "_parameter.csv"
+    ###   Read parameter file
+    parameter = []
+    with open(folder + name_of_para,'r') as n:
+        for line in n:
+            parameter.append(map(str,line.rstrip('\r\n').split(',')))
+    StartPower = int(parameter[3][0])
+    EndPower = int(parameter[3][1])
+    PowerStep = int(parameter[3][2])
+    Num_of_Power = int(parameter[2][3])
+    Num_of_KIDs = int(parameter[4][1])
 
-save_fit(g, folder, readpower)
-save_fit(h, folder, readpower)
+    for numpower in range(Num_of_Power):
+        # Loop for power
+        power = str(numpower*PowerStep + StartPower) + "dBm"
+        name_of_list = date + '_' + power  + '_list.csv'
+        data_name = []
+        with open(folder + name_of_list,'r') as n:
+            for line in n:
+                data_name.append(map(str,line.rstrip('\n').split(','))) # Remove '\n'
+        Fit_result = []
+        for filename in data_name:
+            filename = str(filename).replace("[", "").replace("]", "").replace("'", "").replace("\\r", "")+".csv"
+            Fit_result.append(Analyse_Fit_SingleKID.Fit_SingleKID(folder, filename, span))
+        for numKID in range(Num_of_KIDs):
+            # Loop for KID
+            save_fit(slicing(Fit_result, numKID+1, Num_of_KIDs), folder, power)
 
-save_fit(ii, folder, readpower)
-save_fit(j, folder, readpower)
 """
-save_fit(k, folder, readpower)
-save_fit(l, folder, readpower)
+# for test
+folder = "../../../MeasurementResult/20160729_OMTdelta/"
+date = "20160729"
+span = 1e6
+Fit_List_KIDs(folder, date, span)
 """
