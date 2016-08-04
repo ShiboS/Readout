@@ -6,19 +6,11 @@ import Analyse_Fit_SingleKID as FitSingle
 import Analyse_PSD as PSD
 import FileReader as reader
 
-IQfolder ='IQMixer_Calib/20160603_1M'
-IQfilename = '/EllipseFit_3dBm_3000MHz_8000MHz'
-RF_Freq_Start = 3000  # MHz
-RF_Freq_Interval = 10 # MHz, RF measurement sample every 10 MHz
-
-### Get IQ Sweep measurement data
-data_folder = "../../../MeasurementResult/20160613_NbRRR48_Noise/"
-data_file = 'Sweep_4993MHz_-6dB'
-Frequency = FitSingle.split_str(data_file, "_", 1)
-Frequency = int(FitSingle.split_str(Frequency[1], "M", 1)[0])
-
-paras = IQ.IQ_GetPara(IQfolder,IQfilename,(Frequency-RF_Freq_Start)/RF_Freq_Interval)
-freq, I, Q = reader.ReadSweep(data_folder, data_file)
+IQCorrectionfile ='IQMixer_Calib/20160603_1M/EllipseFit_3dBm_3000MHz_8000MHz.csv'
+sweepdata_folder = "../../../MeasurementResult/20160613_NbRRR48_Noise/"
+sweepdata_file = 'Sweep_4993MHz_-6dB'
+freq, I, Q = reader.ReadSweep(sweepdata_folder, sweepdata_file)
+paras = IQ.IQ_GetPara(IQCorrectionfile, int(round(freq[len(freq)/2]/1e6)))
 I_mixercalibrated, Q_mixercalibrated = IQ.IQ_CorrtBarends(paras,I,Q)
 
 ####   CUT   ####
@@ -63,13 +55,12 @@ rotfile.close()
 
 ##### Noise #####
 ### On resonance noise
-onparas = IQ.IQ_GetPara(IQfolder,IQfilename,(Frequency-RF_Freq_Start)/RF_Freq_Interval)
 noise_folder = "../../../MeasurementResult/20160613_NbRRR48_Noise/"
 noise_file = 'Noise_19dBm_4993MHz_2000K_1S'
 noisefr = fr
-num, noiseI, noiseQ = reader.ReadNoise(noise_folder, noise_file)
-
-noiseIcrr, noiseQcrr = IQ.IQ_CorrtBarends(onparas,noiseI,noiseQ)
+fs, num, noiseI, noiseQ = reader.ReadNoise(noise_folder, noise_file)
+print len(num)/fs
+noiseIcrr, noiseQcrr = IQ.IQ_CorrtBarends(paras,noiseI,noiseQ)
 noisecomp = np.asarray([noiseIcrr[i]+noiseQcrr[i]*1j for i in range(0, len(noiseIcrr))])
 noisecomptilt = noisecomp * np.exp(2*np.pi*1j*noisefr*tau)
 noisecomptiltmove = noisecomptilt-(x_c+1j*y_c)
@@ -82,9 +73,9 @@ noisecompfinalrevised = noisecompfinal * np.exp(1j*revisetheta)
 ### Off resonance noise
 offnoise_file = 'Noise_19dBm_4995MHz_2000K_1S'
 offFreq = 4995
-offparas = IQ.IQ_GetPara(IQfolder,IQfilename,(offFreq-RF_Freq_Start)/RF_Freq_Interval)
-offnoisefr = 4.995e9
-offnum, offnoiseI, offnoiseQ = reader.ReadNoise(noise_folder, offnoise_file)
+offparas = IQ.IQ_GetPara(IQCorrectionfile,offFreq)
+offnoisefr = offFreq*1e6
+offfs, offnum, offnoiseI, offnoiseQ = reader.ReadNoise(noise_folder, offnoise_file)
 
 offnoiseIcrr, offnoiseQcrr = IQ.IQ_CorrtBarends(offparas,offnoiseI,offnoiseQ)
 offnoisecomp = np.asarray([offnoiseIcrr[i]+offnoiseQcrr[i]*1j for i in range(0, len(offnoiseIcrr))])
@@ -115,7 +106,6 @@ plt.plot(offnoiseI, offnoiseQ, '.') # raw data
 plt.show()
 
 ### PSD
-fs = 2e6
 fx, Pxx, fy, Pyy, fxy, Pxy = PSD.Full_Spectrum(noisecompfinal.real, noisecompfinal.imag, fs)
 fxr, Pxxr, fyr, Pyyr, fxyr, Pxyr = PSD.Full_Spectrum(noisecompfinalrevised.real, noisecompfinalrevised.imag, fs)
 fxp, Pxxp, fyp, Pyyp = PSD.Full_SpectrumPwelch(noisecompfinal.real, noisecompfinal.imag, fs)
@@ -129,7 +119,7 @@ plt.plot(fyf, 10*np.log10(Pyyf), label='OFFres Phase')
 #plt.plot(fyr, 10*np.log10(Pyyr), label='Qr')
 #plt.plot(fxy,10*np.log10(Pxy), label='IQ')
 plt.xscale('log')
-plt.xlim([2e0,1e6])
+plt.xlim([2*len(num)/fs,fs/2])
 plt.ylim([-120,-50])
 
 plt.xlabel('Frequency (Hz)')

@@ -48,12 +48,11 @@ def find_nearest(array,value):
     idx = (np.abs(array-value)).argmin()
     return idx
 
-def SimpleQ(folder, filename):
+def SimpleQ(folder, filename, span):
     ### Read data from file
     result, MeasState = Read_File(folder, filename)
-    bandwidth = 2e6
-    
-    freq, linear, phase, mag = Get_Data(result, bandwidth)
+        
+    freq, linear, phase, mag = Get_Data(result, span)
     linear_nor = np.asarray([linear[i]/linear[0] for i in range(0, len(freq))])
     minvalue = np.min(linear_nor)
     linear_nor_square = linear_nor**2
@@ -68,11 +67,11 @@ def SimpleQ(folder, filename):
     Q_c = Q*Q_i/(Q_i - Q)
     print "Q", Q, "Qi", Q_i, "Qc", Q_c
 
-def MillionQi(folder, filename):
+def MillionQi(folder, filename, span):
     ### Read data from file
     result, MeasState = Read_File(folder, filename)
-    bandwidth = 1.2e6
-    freq, linear, phase, mag = Get_Data(result, bandwidth)
+
+    freq, linear, phase, mag = Get_Data(result, span)
     n = len(freq)
     real = [linear[i] * np.cos(np.deg2rad(phase[i])) for i in range(0, n)]
     imag = [linear[i] * np.sin(np.deg2rad(phase[i])) for i in range(0, n)]
@@ -92,11 +91,10 @@ def MillionQi(folder, filename):
     print np.rad2deg(phi0), len(inverset), len(complext)
 
 
-def Fit_SingleKID(folder, filename, BW):
+def Fit_SingleKID(folder, filename, span):
     ### Read data from file
     result, MeasState = Read_File(folder, filename)
-    bandwidth = BW
-    freq, linear, phase, mag = Get_Data(result, bandwidth)
+    freq, linear, phase, mag = Get_Data(result, span)
     n = len(freq)
     real = [linear[i] * np.cos(np.deg2rad(phase[i])) for i in range(0, n)]
     imag = [linear[i] * np.sin(np.deg2rad(phase[i])) for i in range(0, n)]
@@ -119,15 +117,16 @@ def Fit_SingleKID(folder, filename, BW):
     theta0_guess, fr_guess, Qr_guess = 0, np.median(freq), 1e5
     para_phase = theta0_guess, fr_guess, Qr_guess
     theta0, theta0_err, fr, fr_err, Qr, Qr_err, fit_report_phase = Fitter.Fit_Phase(freq, phase_rotated, para_phase)
-    
     print fit_report_phase
+    
+    ### Qc and Qc error
     Qc = (np.absolute(x_c + 1j*y_c) + radius)/2/radius*Qr # Ref: Gao Thesis
     Qc_err0 = np.sqrt(2*(x_c**4*x_c_err**2 + y_c**4*y_c_err**2))/(x_c**2 + y_c**2)
     Qc_err1 = np.sqrt(Qc_err0**2/(x_c**2+y_c**2) + radius**2*radius_err**2)/(np.sqrt(x_c**2+y_c**2)+radius)
     Qc_err2 = np.sqrt(Qc_err1**2 + radius_err**2)
     Qc_err = np.sqrt(Qc_err2**2 + Qr_err**2)
     
-    #Qc_err = np.sqrt(((x_c_err+y_c_err)**2/2 + radius_err**2)/4 + Qr_err**2)
+    ### Qi and Qi error
     Qi = Qr * Qc/(Qc - Qr)
     Qi_err0 = np.sqrt(Qc_err**2 + Qr_err**2)
     Qi_err1 = np.sqrt(Qc**2*Qc_err**2 + Qr**2*Qr_err**2)/(Qc-Qr)
@@ -158,24 +157,21 @@ def Fit_SingleKID(folder, filename, BW):
     finalresult.append(filename)
     return finalresult
 
-def Fit_SingleKID_Lo(folder, filename):
+def Fit_SingleKID_Lo(folder, filename, span):
     ### Read data from file
     result, MeasState = Read_File(folder, filename)
-    bandwidth = 1e6
-    freq, linear, phase, mag = Get_Data(result, bandwidth)
-    n = len(freq)
-    real = [linear[i] * np.cos(np.deg2rad(phase[i])) for i in range(0, n)]
-    imag = [linear[i] * np.sin(np.deg2rad(phase[i])) for i in range(0, n)]
-    maglin = [linear[i]**2 for i in range(0, n)]
-    
-    #A1, A1_err, A2, A2_err, A3, A3_err, A4, A4_err, fr, fr_err, Qr, Qr_err, report = Fitter.Fit_SkewedLorentizian(freq, mag)
-    #fitcurve = [10*np.log10(A1 + A2*(freq[i]-fr) + (A3 + A4*(freq[i]-fr))/(1 + 4*Qr*Qr*((freq[i]-fr)/fr)**2)) for i in range(0, n)]
-    plt.plot(freq, 10*np.log10(maglin))
-    plt.plot(freq, mag,'.',linewidth=2,label="Data")
-    #plt.plot(freq/fr, fitcurve, 'r-',linewidth=1,label="Fit")
+    freq, linear, phase, mag = Get_Data(result, span)
+
+    A1, A1_err, A2, A2_err, A3, A3_err, A4, A4_err, fr, fr_err, Qr, Qr_err, report = Fitter.Fit_SkewedLorentizian(freq, mag)
+    fitcurve = [10*np.log10(A1 + A2*(f-fr) + (A3 + A4*(f-fr))/(1 + 4*Qr*Qr*((f-fr)/fr)**2)) for f in freq]
+    minvalue = np.power(10, (np.amin(mag) - np.amax(mag))/10)
+    Qi = Qr / minvalue
+    Qc = Qr*Qi/(Qi - Qr)
+    print Qr, Qi, Qc
+    plt.plot(freq, mag, '.', linewidth=2, label="Data")
+    plt.plot(freq, fitcurve, 'r-', linewidth=1, label="Fit")
     plt.xlabel('Normalized Frequency')
     plt.ylabel('S21 (dB)')
-    #plt.xlim([0.9999,1.0001])
     plt.legend(loc=3)
     plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
     plt.show()
@@ -183,11 +179,10 @@ def Fit_SingleKID_Lo(folder, filename):
     #print report,fr
     #return A1, A2, A3, A4, fr, Qr
 
-def Fit_7parameter(folder, filename):
+def Fit_7parameter(folder, filename, span):
     ### Read data from file
     result, MeasState = Read_File(folder, filename)
-    bandwidth = 2e6
-    freq, linear, phase, mag = Get_Data(result, bandwidth)
+    freq, linear, phase, mag = Get_Data(result, span)
     n = len(freq)
     real = [linear[i] * np.cos(np.deg2rad(phase[i])) for i in range(0, n)]
     imag = [linear[i] * np.sin(np.deg2rad(phase[i])) for i in range(0, n)]
@@ -368,11 +363,12 @@ def Fit_7parameterIQ2(freq, comp, para_guess):
     finalresult.append(radius_err/radius)
     
     return finalresult
-#filename = '20160616_-25dBm_3.867563275_0.0016_99.99mK.csv'
-#folder = '../../../MeasurementResult/20160616_Nb154nmCry48/'
-#a = SimpleQ(folder, filename)
-#b = MillionQi(folder, filename)
-#result = Fit_SingleKID(folder, filename)
-#result = Fit_SingleKID_Lo(folder, filename)
+#filename = '20160518_-10dBm_4.99347845_0.0025_707.804mK.csv'
+#folder = '../../../MeasurementResult/20160516_Nb154nmCry3/'
+#span = 2e6
+#a = SimpleQ(folder, filename, span)
+#b = MillionQi(folder, filename, span)
+#result = Fit_SingleKID(folder, filename, span)
+#result = Fit_SingleKID_Lo(folder, filename, span)
 #result = Fit_7parameter(folder, filename)
 #print result

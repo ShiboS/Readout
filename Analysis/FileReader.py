@@ -18,11 +18,12 @@ def ReadNoise(folder, filename):
         for line in f:
             noisedata.append(map(str,line.split(',')))
     noiselength = len(noisedata)
+    fs = int(noisedata[14][1])
     num = np.asarray([float(noisedata[i][0]) for i in range(22,noiselength)])
     noiseI = np.asarray([float(noisedata[i][1]) for i in range(22,noiselength)])
     noiseQ = np.asarray([float(noisedata[i][2].replace("\n", "")) for i in range(22, noiselength)])
     
-    return num, noiseI, noiseQ
+    return fs, num, noiseI, noiseQ
     
 def CutSweep(bandwidth, freq, I, Q):
     n = len(freq)

@@ -1,20 +1,20 @@
 import numpy as np
 
-def IQ_GetPara(folder, filename, freq):
+def IQ_GetPara(path_to_file, frequency):
     ### Read IQ mixer calibration parameters from ellipse fitting
-    name_of_file = filename + '.csv'
     result = []
-    with open(folder + name_of_file,'r') as f:
+    with open(path_to_file,'r') as f:
         for line in f:
             result.append(map(str,line.split(',')))
 
-    f_list = [float(result[i][0]) for i in range(1,len(result))]
+    f_list = [int(result[i][0]) for i in range(1,len(result))]
     x_c = [float(result[i][1]) for i in range(1,len(result))]
     y_c = [float(result[i][3]) for i in range(1,len(result))]
     A_I = [float(result[i][11]) for i in range(1,len(result))]
     A_Q = [float(result[i][12]) for i in range(1,len(result))]
     gamma = [float(result[i][15].replace("\n", "")) for i in range(1,len(result))]
-    
+    freq = (frequency-f_list[0])/(f_list[1]-f_list[0])
+
     return x_c[freq], y_c[freq], A_I[freq], A_Q[freq], gamma[freq]
 
 def IQ_CorrtGao(paras,I,Q):

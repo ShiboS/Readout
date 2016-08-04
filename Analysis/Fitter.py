@@ -108,9 +108,11 @@ def Fit_Ellipse(I,Q):
     return x_c, x_c_err, y_c, y_c_err, x_dim, x_dim_err, y_dim, y_dim_err, angle, angle_err
 
 def plot_data_ellipse(x,y, x_c, y_c, x_dim, y_dim, angle):
-    # plot ellipse data to compare with fitting result
-    # x, y: initial data
-    # x_c, y_c, x_dim, y_dim, angle: fitting result
+    """
+    plot ellipse data to compare with fitting result
+    x, y: initial data
+    x_c, y_c, x_dim, y_dim, angle: fitting result
+    """
     f = plt.figure( facecolor='white')
     plt.axis('equal')
 
@@ -209,7 +211,7 @@ def Fit_SkewedLorentizian_Func(params, f, t):
     A4 = params['A4'].value
     fr = params['fr'].value
     Qr = params['Qr'].value
-
+    
     func = 10*np.log10(A1 + A2*(f-fr) + (A3 + A4*(f-fr))/(1 + 4*Qr*Qr*((f-fr)/fr)**2))
     # return the residual
     residual = func - t
@@ -217,11 +219,11 @@ def Fit_SkewedLorentizian_Func(params, f, t):
     
 def Fit_SkewedLorentizian(f,t):
     params = Parameters()
-    params.add('A1', value = t[0], min = -50, max = 30) # Background
+    params.add('A1', value = np.power(10, t[0]/10.), min = 0, max = 10) # Background
     params.add('A2', value = 0)#, min = -0.5, max = 0.5)  # Slope
-    params.add('A3', value = np.amin(t))#, min = -60, max = 30)    # Lowest point
+    params.add('A3', value = np.power(10, np.amin(t)/10.))    # Lowest point
     params.add('A4', value = 0)
-    params.add('fr', value = np.median(f), min = 1e9, max = 8e9)
+    params.add('fr', value = np.median(f), min = f[0], max = f[len(f)-1])
     params.add('Qr', value = 10000, min = 1e3, max = 1e8)
     result = minimize(Fit_SkewedLorentizian_Func, params, args=(f, t))
     
