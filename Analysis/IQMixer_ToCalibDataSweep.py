@@ -59,7 +59,7 @@ noise_folder = "../../../MeasurementResult/20160613_NbRRR48_Noise/"
 noise_file = 'Noise_19dBm_4993MHz_2000K_1S'
 noisefr = fr
 fs, num, noiseI, noiseQ = reader.ReadNoise(noise_folder, noise_file)
-print len(num)/fs
+
 noiseIcrr, noiseQcrr = IQ.IQ_CorrtBarends(paras,noiseI,noiseQ)
 noisecomp = np.asarray([noiseIcrr[i]+noiseQcrr[i]*1j for i in range(0, len(noiseIcrr))])
 noisecomptilt = noisecomp * np.exp(2*np.pi*1j*noisefr*tau)

@@ -243,7 +243,10 @@ def Fit_SkewedLorentizian(f,t):
     Qr = result.params['Qr'].value
     Qr_err = result.params['Qr'].stderr
     return A1, A1_err, A2, A2_err, A3, A3_err, A4, A4_err, fr, fr_err, Qr, Qr_err, fit_report(result)
-    
+
+def SevenPara(a, alpha, tau, phi0, f0, Qr, Qc, freq):
+    return a * np.exp(1j*alpha) * np.exp(-2*np.pi*1j*freq*tau) * (1 - (Qr/Qc*np.exp(1j*phi0))/(1 + 2*1j*Qr*(freq-f0)/f0))
+
 def Fit_7para_Func(params, freq, t):
     a = params['a'].value
     alpha = params['alpha'].value

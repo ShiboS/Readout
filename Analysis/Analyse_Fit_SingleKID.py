@@ -363,12 +363,12 @@ def Fit_7parameterIQ2(freq, comp, para_guess):
     finalresult.append(radius_err/radius)
     
     return finalresult
-#filename = '20160518_-10dBm_4.99347845_0.0025_707.804mK.csv'
-#folder = '../../../MeasurementResult/20160516_Nb154nmCry3/'
-#span = 2e6
+filename = '20160518_-10dBm_4.99347845_0.0025_707.804mK.csv'
+folder = '../../../MeasurementResult/20160516_Nb154nmCry3/'
+span = 2e6
 #a = SimpleQ(folder, filename, span)
 #b = MillionQi(folder, filename, span)
 #result = Fit_SingleKID(folder, filename, span)
-#result = Fit_SingleKID_Lo(folder, filename, span)
+result = Fit_SingleKID_Lo(folder, filename, span)
 #result = Fit_7parameter(folder, filename)
 #print result
