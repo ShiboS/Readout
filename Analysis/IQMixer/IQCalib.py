@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import interpolate
 
 def IQ_GetPara(path_to_file, frequency):
     ### Read IQ mixer calibration parameters from ellipse fitting
@@ -64,10 +65,77 @@ def IQ_CorrtBarends(paras,I,Q):
     QA = [Qmoved[i]*A_I/A_Q for i in range(0,datalength)]
     theta = [np.arctan2(QA[i]-Imoved[i]*np.sin(gamma), Imoved[i]*np.cos(gamma))  for i in range(0,datalength)]
     rroot = [np.sqrt((Imoved[i]**2 + QA[i]**2)/(np.cos(theta[i])**2 + np.sin(theta[i]+gamma)**2)) for i in range(0,datalength)]
-    Ical = [rroot[i]*np.cos(theta[i]) for i in range(0,datalength)]
-    Qcal = [rroot[i]*np.sin(theta[i]) for i in range(0,datalength)]
+    Ical = np.asarray([rroot[i]*np.cos(theta[i]) for i in range(0,datalength)])
+    Qcal = np.asarray([rroot[i]*np.sin(theta[i]) for i in range(0,datalength)])
     return Ical, Qcal
     
+def IQ_CorrtBarendsSingle(paras,I,Q):
+    ### Calibrate IQ measurement data
+    ### read parameters
+    x_c = paras[0]
+    y_c = paras[1]
+    A_I = paras[2]
+    A_Q = paras[3]
+    gamma = paras[4]+np.pi/2.
+    
+    ### move IQ data center to center (0,0)
+    Imoved = I-x_c
+    Qmoved = Q-y_c
+    QA = Qmoved*A_I/A_Q
+    theta = np.arctan2(QA-Imoved*np.sin(gamma), Imoved*np.cos(gamma))
+    rroot = np.sqrt((Imoved**2 + QA**2)/(np.cos(theta)**2 + np.sin(theta+gamma)**2))
+    Ical = rroot*np.cos(theta)
+    Qcal = rroot*np.sin(theta)
+    return Ical, Qcal
+    
+def IQ_Normalize_Sweep(Sweepfreq, Iraw, Qraw, IQReffolder, IQReffilename):
+    """
+    Normalize IQ sweep data to T>Tc/2 IQ data (IQRef data)
+    """
+    ### Read IQRef data
+    data = []
+    with open(IQReffolder + IQReffilename + '.csv','r') as f:
+        for line in f:
+            data.append(map(str,line.split(',')))
+
+    frequency = np.asarray([int(data[i][0]) for i in range(0, len(data))])
+    IRef = np.asarray([float(data[i][1]) for i in range(0, len(data))])
+    QRef = np.asarray([float(data[i][2].replace("\n", "")) for i in range(0, len(data))])
+    ### select interpolate data range
+    ### +/- 5 points (5 MHz) of sweep frequency
+    interpolate_start =  int(Sweepfreq[0]/1e6)-2000-5
+    interpolate_end=  int(Sweepfreq[len(Sweepfreq)-1]/1e6)-2000+5
+    ### interpolate function ('cubic')
+    fI = interpolate.interp1d(frequency[interpolate_start:interpolate_end], IRef[interpolate_start:interpolate_end], kind='cubic')
+    fQ = interpolate.interp1d(frequency[interpolate_start:interpolate_end], QRef[interpolate_start:interpolate_end], kind='cubic')
+    ### normalize IQ sweep data to IQRef data
+    IQnormalized = (Iraw + 1j*Qraw)/(fI(Sweepfreq/1e6)+1j*fQ(Sweepfreq/1e6))
+    return IQnormalized
+    
+def IQ_Normalize_Noise(Noisefreq, Iraw, Qraw, IQReffolder, IQReffilename):
+    """
+    Normalize IQ sweep data to T>Tc/2 IQ data (IQRef data)
+    """
+    ### Read IQRef data
+    data = []
+    with open(IQReffolder + IQReffilename + '.csv','r') as f:
+        for line in f:
+            data.append(map(str,line.split(',')))
+
+    frequency = np.asarray([int(data[i][0]) for i in range(0, len(data))])
+    IRef = np.asarray([float(data[i][1]) for i in range(0, len(data))])
+    QRef = np.asarray([float(data[i][2].replace("\n", "")) for i in range(0, len(data))])
+    ### select interpolate data range
+    ### +/- 5 points (5 MHz) of sweep frequency
+    interpolate_start =  int(Noisefreq)-2000-5
+    interpolate_end=  int(Noisefreq)-2000+5
+    ### interpolate function ('cubic')
+    fI = interpolate.interp1d(frequency[interpolate_start:interpolate_end], IRef[interpolate_start:interpolate_end], kind='cubic')
+    fQ = interpolate.interp1d(frequency[interpolate_start:interpolate_end], QRef[interpolate_start:interpolate_end], kind='cubic')
+    ### normalize IQ sweep data to IQRef data
+    IQnormalized = (Iraw + 1j*Qraw)/(fI(Noisefreq) + 1j*fQ(Noisefreq))
+    return IQnormalized
+
 def cable_delay_calib(time_delay, frequency):
     ### Gao Thesis Appendix E Eqn E.1
     return np.exp(2*np.pi*1j*time_delay*frequency)

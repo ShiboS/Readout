@@ -12,6 +12,9 @@ LS350 = inst1.LS350()
 VNA.whoareyou()
 LS350.whoareyou()
 
+"""
+EDIT THIS PART ->
+"""
 DelayFrequency = 3E9
 meas.VNA_Initialize_Delay(DelayFrequency)
 
@@ -20,24 +23,28 @@ LS350.SetHeaterRange(3)
 #LS350.SetPID("6000", "12", "1")
 
 ###   Temperature mK   ###
-StartTemp = 150
-EndTemp = 700
-TempStep = 30
+StartTemp = 80
+EndTemp = 400
+TempStep = 10
 TempStableUp = 1.01
 TempStableDn = 0.99
 
 ###   Power dBm   ###
 StartPower = -55
-EndPower = -35
+EndPower = 0
 PowerStep = 5
 numPower = (EndPower - StartPower)/PowerStep +1
 
 ###   Resonance   ###
 KID_span = 2E6
-resonances = [2.1508E9, 3.6770E9, 3.7348E9, 3.7555E9, 3.8292E9, 3.9319E9, 5.3263E9, 6.9558E9]
+resonances = [3.4764E9, 3.4884E9, 3.5247E9, 3.5355E9, 3.6169E9, 3.9431E9, 4.4798E9, 4.5044E9, 4.5262E9, 4.5481E9, 4.579E9, 4.5908E9, 4.7746E9]
 
 ###   Folder path need to create this folder manually   ###
-folder = '../../../MeasurementResult/20160729_OMTdelta/'
+folder = '../../../MeasurementResult/20160814_Al_Noguchi/'
+
+"""
+<- EDIT THIS PART
+"""
 
 ###   File name list
 file_name_list = []

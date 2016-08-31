@@ -6,20 +6,20 @@ import Analyse_Fit_SingleKID as FitSingle
 import Analyse_PSD as PSD
 import FileReader as reader
 
-IQCorrectionfile ='IQMixer_Calib/20160603_1M/EllipseFit_3dBm_3000MHz_8000MHz.csv'
-sweepdata_folder = "../../../MeasurementResult/20160613_NbRRR48_Noise/"
-sweepdata_file = 'Sweep_4993MHz_-6dB'
+IQCorrectionfile ='IQMixer_Calib/20160803_1M_BOX/EllipseFit_0dBm_2000MHz_8000MHz.csv'
+sweepdata_folder = "../../../MeasurementResult/20160814_Al_Noguchi/"
+sweepdata_file = 'Sweep_4579MHz'
 freq, I, Q = reader.ReadSweep(sweepdata_folder, sweepdata_file)
 paras = IQ.IQ_GetPara(IQCorrectionfile, int(round(freq[len(freq)/2]/1e6)))
 I_mixercalibrated, Q_mixercalibrated = IQ.IQ_CorrtBarends(paras,I,Q)
 
 ####   CUT   ####
-bandwidth = 0.5e6
+bandwidth = 1e6
 freq, real, imag = reader.CutSweep(bandwidth, freq, I_mixercalibrated, Q_mixercalibrated)
 comp = np.asarray([real[i]+imag[i]*1j for i in range(0, len(real))])
 
 ### Fit ###
-tau = 35.194e-9
+tau = 45e-9
 a, a_err, alpha, alpha_err, tau, tau_err, phi0, phi0_err, fr, fr_err, Qr, Qr_err, Qc, Qc_err, Qi = FitSingle.Fit_7parameterIQ1(freq, comp, tau)
 fitIQ1 = a * np.exp(1j*alpha) * np.exp(-2*np.pi*1j*freq*tau) * (1 - (Qr/Qc*np.exp(1j*phi0))/(1 + 2*1j*Qr*(freq-fr)/fr))
 comptilt = comp * np.exp(2*np.pi*1j*freq*tau)

@@ -12,6 +12,10 @@ LS350 = inst1.LS350()
 VNA.whoareyou()
 LS350.whoareyou()
 
+"""
+EDIT THIS PART ->
+"""
+
 DelayFrequency = 3E9
 meas.VNA_Initialize_Delay(DelayFrequency)
 
@@ -26,6 +30,10 @@ resonances = [2.1508E9, 3.6770E9, 3.7348E9, 3.7555E9, 3.8292E9, 3.9319E9, 5.3263
 
 ###   Folder path need to create this folder manually   ###
 folder = '../../../MeasurementResult/20160729_OMTdelta/'
+
+"""
+<- EDIT THIS PART
+"""
 
 ###   File name list
 file_name_list = []

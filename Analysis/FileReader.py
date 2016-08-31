@@ -1,5 +1,11 @@
 import numpy as np
 
+def split_str(s, c, n):
+    ### http://stackoverflow.com/questions/27227399/python-split-a-string-at-an-underscore
+    ### Split file name to get center frequency
+    words = s.split(c)
+    return c.join(words[:n]), c.join(words[n:])
+
 def ReadSweep(folder, filename):
     data = []
     with open(folder + filename + '.csv','r') as f:
@@ -11,14 +17,30 @@ def ReadSweep(folder, filename):
     Q = np.asarray([float(data[i][2].replace("\n", "")) for i in range(0,len(data))])
     
     return freq, I, Q
-    
+
 def ReadNoise(folder, filename):
     noisedata = []
     with open(folder + filename + '.csv','r') as f:
         for line in f:
             noisedata.append(map(str,line.split(',')))
     noiselength = len(noisedata)
-    fs = int(noisedata[14][1])
+    firstsplit = split_str(filename, "K", 1)
+    secondsplit = split_str(firstsplit[0], "MHz_", 1)
+    fs = int(float(secondsplit[1])*1e3)
+    num = np.asarray([float(noisedata[i][0]) for i in range(22,noiselength)])
+    noiseI = np.asarray([float(noisedata[i][1]) for i in range(22,noiselength)])
+    noiseQ = np.asarray([float(noisedata[i][2].replace("\n", "")) for i in range(22, noiselength)])
+    
+    return fs, num, noiseI, noiseQ
+    
+def ReadCosmicRay(folder, filename):
+    noisedata = []
+    with open(folder + filename + '.csv','r') as f:
+        for line in f:
+            noisedata.append(map(str,line.split(',')))
+    noiselength = len(noisedata)
+    firstsplit = split_str(filename, "K", 1)
+    fs = float(firstsplit[0])*1e3
     num = np.asarray([float(noisedata[i][0]) for i in range(22,noiselength)])
     noiseI = np.asarray([float(noisedata[i][1]) for i in range(22,noiselength)])
     noiseQ = np.asarray([float(noisedata[i][2].replace("\n", "")) for i in range(22, noiselength)])

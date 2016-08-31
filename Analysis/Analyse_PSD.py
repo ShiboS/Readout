@@ -26,21 +26,21 @@ def Combine_psd(f1, P1, f2, P2, f3, P3, fs):
     f = []
     P = []
     
-    index = np.where(np.logical_and(f1>=fs/fs/20,f1<fs/80000))
+    index = np.where(np.logical_and(f1>=0,f1<100))
     farray = f1[index]
     Parray = P1[index]
     for i in range(0, len(farray)):
         f.append(farray[i])
         P.append(Parray[i])
 
-    index = np.where(np.logical_and(f2>=fs/80000,f2<fs/2000))
+    index = np.where(np.logical_and(f2>=100,f2<1000))
     farray = f2[index]
     Parray = P2[index]
     for i in range(0, len(farray)):
         f.append(farray[i])
         P.append(Parray[i])
     
-    index = np.where(np.logical_and(f3>=fs/2000,f3<fs))
+    index = np.where(np.logical_and(f3>=1000,f3<=fs))
     farray = f3[index]
     Parray = P3[index]
     for i in range(0, len(farray)):

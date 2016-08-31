@@ -244,9 +244,10 @@ def Fit_SkewedLorentizian(f,t):
     Qr_err = result.params['Qr'].stderr
     return A1, A1_err, A2, A2_err, A3, A3_err, A4, A4_err, fr, fr_err, Qr, Qr_err, fit_report(result)
 
-def SevenPara(a, alpha, tau, phi0, f0, Qr, Qc, freq):
-    return a * np.exp(1j*alpha) * np.exp(-2*np.pi*1j*freq*tau) * (1 - (Qr/Qc*np.exp(1j*phi0))/(1 + 2*1j*Qr*(freq-f0)/f0))
-
+def Fit_7para_Model(a, alpha, tau, phi0, fr, Qr, Qc, freq):
+    func = a * np.exp(1j*alpha) * np.exp(-2*np.pi*1j*freq*tau) * (1 - (Qr/Qc*np.exp(1j*phi0))/(1 + 2*1j*Qr*(freq-fr)/fr))
+    return func
+    
 def Fit_7para_Func(params, freq, t):
     a = params['a'].value
     alpha = params['alpha'].value
@@ -256,7 +257,7 @@ def Fit_7para_Func(params, freq, t):
     Qr = params['Qr'].value
     Qc = params['Qc'].value
 
-    func = a * np.exp(1j*alpha) * np.exp(-2*np.pi*1j*freq*tau) * (1 - (Qr/Qc*np.exp(1j*phi0))/(1 + 2*1j*Qr*(freq-fr)/fr))
+    func = Fit_7para_Model(a, alpha, tau, phi0, fr, Qr, Qc, freq)
     # return the residual
     residual = np.abs(func - t)
     return residual
@@ -265,7 +266,7 @@ def Fit_7para(freq,t,estimateparas):
     params = Parameters()
     params.add('a', value = estimateparas[0])#, min = -50, max = 50)
     params.add('alpha', value = estimateparas[1], min = -np.pi, max = np.pi)
-    params.add('tau', value = estimateparas[2], min = 0e-9, max = 80e-9)
+    params.add('tau', value = estimateparas[2], min = -2e-9, max = 2e-9)
     params.add('phi0', value = estimateparas[3], min = -np.pi, max = np.pi)
     params.add('fr', value = estimateparas[4], min = freq[0], max = freq[len(freq)-1])
     params.add('Qr', value = estimateparas[5], min = 1e3, max = 1e8)
@@ -320,3 +321,54 @@ def Fit_7para_tau(freq,t,estimateparas):
     Qc = result.params['Qc'].value
     Qc_err = result.params['Qc'].stderr
     return a, a_err, alpha, alpha_err, tau, tau_err, phi0, phi0_err, fr, fr_err, Qr, Qr_err, Qc, Qc_err,fit_report(result)
+    
+def Fit_CosmicRay_model(t, t0, a, A, tau, taur):
+    #   input time variable should be array
+    def timepoint(t, t0, a, A, tau, taur):
+        #   calculate at each single time point
+        if t>t0:    
+            return A*(np.exp(-(t-t0)/tau) - np.exp(-(t-t0)/taur))+a
+        else:
+            return a
+    #   array result
+    value = np.asarray([timepoint(time, t0, a, A, tau, taur) for time in t])
+    return value
+
+def Fit_CosmicRay_Func(params, t, Amp):
+    a = params['a'].value
+    A = params['A'].value
+    t0 = params['t0'].value
+    tau = params['tau'].value
+    taur = params['taur'].value
+    model = Amp - Fit_CosmicRay_model(t, t0, a, A, tau, taur)
+    return model
+
+def Fit_CosmicRay(t, Amp):
+    # create a set of Parameters
+    # time in microsecond unit
+    params = Parameters()
+    params.add('a', value= Amp[0], min = 0, max = 10)
+    params.add('A', value= 1)
+    params.add('t0', value= t[np.argmax(Amp)], min = t[np.argmax(Amp)-150], max = t[np.argmax(Amp)+100])
+    params.add('tau', value= 100, min = 1, max = 400)
+    params.add('taur', value= 1, min = 0.2, max = 20)
+    
+    # do fit, here with leastsq model
+    result = minimize(Fit_CosmicRay_Func, params, args=(t, Amp))
+    
+    # calculate final result
+    residual = result.residual
+    print(fit_report(result))
+    # Calculate Qc and Qi
+    a = result.params['a'].value
+    a_err = np.abs(result.params['a'].stderr/a)
+    A = result.params['A'].value
+    A_err = np.abs(result.params['A'].stderr/A)
+    t0 = result.params['t0'].value
+    t0_err = np.abs(result.params['t0'].stderr/t0)
+    tau = result.params['tau'].value
+    tau_err = np.abs(result.params['tau'].stderr/tau)
+    taur = result.params['taur'].value
+    taur_err = np.abs(result.params['taur'].stderr/taur)
+    return a, a_err, A, A_err, t0, t0_err, tau, tau_err, taur, taur_err, fit_report(result), residual
+    

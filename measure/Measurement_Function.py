@@ -175,6 +175,7 @@ def Save_KID_Cryostat2(folder):
     
     # Query the stage temperature from LS370 Chaneel: D
     Stage_Temp = str(1000*float(LS350.GetTemp("D"))) + 'mK'
+    #Stage_Temp = '90mK'
     
     # Name of file
     name_of_file = time_yyyymmdd + '_' + POWER + '_' +  FCENTER + '_' + FSPAN + '_' + Stage_Temp

@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import Fitter # For circle fitting
-from lmfit import minimize, Parameters, Parameter, fit_report
+import IQMixer.IQCalib as IQ
+import FileReader as reader
 
 def split_str(s, c, n):
     ### http://stackoverflow.com/questions/27227399/python-split-a-string-at-an-underscore
@@ -158,7 +159,7 @@ def Fit_SingleKID(folder, filename, span):
     return finalresult
 
 def Fit_SingleKID_Lo(folder, filename, span):
-    ### Read data from file
+    ### Lorentizian fitting
     result, MeasState = Read_File(folder, filename)
     freq, linear, phase, mag = Get_Data(result, span)
 
@@ -363,12 +364,89 @@ def Fit_7parameterIQ2(freq, comp, para_guess):
     finalresult.append(radius_err/radius)
     
     return finalresult
-filename = '20160518_-10dBm_4.99347845_0.0025_707.804mK.csv'
-folder = '../../../MeasurementResult/20160516_Nb154nmCry3/'
-span = 2e6
+    
+def Fit_IQ_Sweep(freq, complexIQ):
+    n = len(freq)
+    """
+    Fit Circle
+    Rotate and move data  to the origin
+    """
+    x_c, x_c_err, y_c, y_c_err, radius, radius_err, circle_fit_report = Fitter.Fit_Circle(complexIQ.real, complexIQ.imag)
+    Z_ii = (x_c + 1j*y_c - complexIQ)#*np.exp(-1j * np.arctan(y_c/x_c))
+    """
+    ### Fit result and data
+    #Fitter.plot_data_circle(complexIQ.real, complexIQ.imag, x_c, y_c, radius)
+    plt.plot(Z_ii.real, Z_ii.imag)
+    plt.show()
+    """
+    ### Fit Phase
+    data_phase = np.arctan2(Z_ii.imag, Z_ii.real)
+    rotate_angle = np.pi-np.angle(Z_ii[0] + Z_ii[n-1])
+    Z_iir = Z_ii*np.exp(1j * rotate_angle)
+    phase_rotated = np.arctan2(Z_iir.imag, Z_iir.real)
+    theta0_guess, fr_guess, Qr_guess = 0, np.median(freq), 1e5
+    para_phase = theta0_guess, fr_guess, Qr_guess
+    theta0, theta0_err, fr, fr_err, Qr, Qr_err, fit_report_phase = Fitter.Fit_Phase(freq, phase_rotated, para_phase)
+    print fit_report_phase
+
+    ### Qc and Qc error
+    Qc = (np.absolute(x_c + 1j*y_c) + radius)/2/radius*Qr # Ref: Gao Thesis
+    Qc_err0 = np.sqrt(2*(x_c**4*x_c_err**2 + y_c**4*y_c_err**2))/(x_c**2 + y_c**2)
+    Qc_err1 = np.sqrt(Qc_err0**2/(x_c**2+y_c**2) + radius**2*radius_err**2)/(np.sqrt(x_c**2+y_c**2)+radius)
+    Qc_err2 = np.sqrt(Qc_err1**2 + radius_err**2)
+    Qc_err = np.sqrt(Qc_err2**2 + Qr_err**2)
+    
+    ### Qi and Qi error
+    Qi = Qr * Qc/(Qc - Qr)
+    Qi_err0 = np.sqrt(Qc_err**2 + Qr_err**2)
+    Qi_err1 = np.sqrt(Qc**2*Qc_err**2 + Qr**2*Qr_err**2)/(Qc-Qr)
+    Qi_err = np.sqrt(Qi_err0**2 + Qi_err1**2)
+
+    return x_c, x_c_err, y_c, y_c_err, radius, radius_err, circle_fit_report, theta0, theta0_err, fr, fr_err, Qr, Qr_err, Qc, Qc_err, Qi, Qi_err, fit_report_phase
+
+def GetFr(sweepdata_folder, sweepdata_file, IQCalibrationfile, IQReffolder, IQReffilename):
+    ### Read IQ Sweep data
+    freq, I, Q = reader.ReadSweep(sweepdata_folder, sweepdata_file)
+    ### Get IQ Mixer calibration data for sweep data frequency
+    paras = IQ.IQ_GetPara(IQCalibrationfile, int(round(freq[len(freq)/2]/1e6)))
+    ### Calibrate IQ Sweep data
+    I_mixercalibrated, Q_mixercalibrated = IQ.IQ_CorrtBarends(paras,I,Q)
+
+    ### Normalize calibrated IQ Sweep data to IQ reference data
+    ### Get complex IQ
+    IQ_normalized = IQ.IQ_Normalize_Sweep(freq, I_mixercalibrated, Q_mixercalibrated, IQReffolder, IQReffilename)
+    x_c, x_c_err, y_c, y_c_err, radius, radius_err, circle_fit_report, theta0, theta0_err, fr, fr_err, Qr, Qr_err, Qc, Qc_err, Qi, Qi_err, fit_report_phase = Fit_IQ_Sweep(freq, IQ_normalized)
+    return int(round(fr))
+    
+def Fit_IQ_Noise(freq, sweepcomplexIQ):
+    """
+    Fit Circle
+    Rotate and move data  to the origin
+    """
+    n = len(freq)
+    x_c, x_c_err, y_c, y_c_err, radius, radius_err, circle_fit_report = Fitter.Fit_Circle(sweepcomplexIQ.real, sweepcomplexIQ.imag)
+    Z_ii = (x_c + 1j*y_c - sweepcomplexIQ)#*np.exp(-1j * np.arctan(y_c/x_c))
+    """
+    ### Fit result and data
+    #Fitter.plot_data_circle(complexIQ.real, complexIQ.imag, x_c, y_c, radius)
+    plt.plot(Z_ii.real, Z_ii.imag)
+    plt.show()
+    """
+    ### Fit Phase
+    data_phase = np.arctan2(Z_ii.imag, Z_ii.real)
+    rotate_angle = np.pi-np.angle(Z_ii[0] + Z_ii[n-1])
+    Z_iir = Z_ii*np.exp(1j * rotate_angle)
+    phase_rotated = np.arctan2(Z_iir.imag, Z_iir.real)
+    theta0_guess, fr_guess, Qr_guess = 0, np.median(freq), 1e5
+    para_phase = theta0_guess, fr_guess, Qr_guess
+    theta0, theta0_err, fr, fr_err, Qr, Qr_err, fit_report_phase = Fitter.Fit_Phase(freq, phase_rotated, para_phase)
+    print fit_report_phase
+#filename = '20160518_-10dBm_4.99347845_0.0025_707.804mK.csv'
+#folder = '../../../MeasurementResult/20160516_Nb154nmCry3/'
+#span = 2e6
 #a = SimpleQ(folder, filename, span)
 #b = MillionQi(folder, filename, span)
 #result = Fit_SingleKID(folder, filename, span)
-result = Fit_SingleKID_Lo(folder, filename, span)
+#result = Fit_SingleKID_Lo(folder, filename, span)
 #result = Fit_7parameter(folder, filename)
 #print result

@@ -1,14 +1,15 @@
-### test data correction is OK or not
-### For example, use the correction parameters to correct the original calibration data
-### to see the calibration data could be circled or not
+### Generate IQ reference data from sweep measurement data
 import numpy as np
-import matplotlib.pyplot as plt
 import IQMixer.IQCalib as IQ
 import csv
-from scipy import interpolate
 
+"""
+Input data folder and file created by LabVIEW (SweepMeasurement)
+with center freq 5000MHz and span 6000 MHz and 6001 points
+"""
 folder ="../../../MeasurementResult/"
 filename = 'Sweep_5000MHz'
+
 ### Get IQ measurement data
 data = []
 with open(folder + filename + '.csv','r') as f:
@@ -20,6 +21,8 @@ I = np.asarray([float(data[i][1]) for i in range(0,len(data))])
 Q = np.asarray([float(data[i][2].replace("\n", "")) for i in range(0,len(data))])
 print frequency[0]
 
+### IQMixer calibration file to correct data measured with IQMixer
+#   If the BOX is changed, please calibrate IQMixer again
 IQCorrectionfile ='IQMixer_Calib/20160803_1M_BOX/EllipseFit_0dBm_2000MHz_8000MHz.csv'
 Icrr= []
 Qcrr= []
@@ -30,12 +33,6 @@ for i in range(0, len(frequency)):
     Qcrr.append(Qtemp)
 
 
-#plt.plot(frequency, I)
-plt.plot(4005, fc(4005),'.')
-plt.plot(frequency, Icrr, '.')
-plt.xlim([4000,4010])
-plt.show()
-
 ### save calibrated result
 crrfile = open(folder + filename + '_IQMixerCalibrated.csv', 'w')
 fwrite = csv.writer(crrfile)
@@ -43,23 +40,3 @@ fwrite = csv.writer(crrfile)
 for i in range(0, len(Icrr)):
     fwrite.writerow([frequency[i], Icrr[i], Qcrr[i]])
 crrfile.close()
-"""
-IcalG, QcalG = IQ.IQ_CorrtGao(paras,I,Q)
-plt.plot(I,Q,'g')
-plt.plot(IcalG,QcalG)
-plt.show()
-
-IcalB, QcalB = IQ.IQ_CorrtBarends(paras,I,Q)
-plt.plot(I,Q,'g')
-plt.plot(IcalB,QcalB,'r')
-
-from scipy import signal
-fs = 5e4
-
-fwelch,Pwelch = signal.welch(Icrr, fs, nperseg=len(Icrr))
-plt.loglog(fwelch,Pwelch,label='Icrr')
-
-fwelch,Pwelch = signal.welch(I, fs, nperseg=len(Icrr))
-plt.loglog(fwelch,Pwelch,label='I')
-plt.show()
-"""

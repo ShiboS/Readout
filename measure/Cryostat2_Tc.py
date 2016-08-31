@@ -25,8 +25,9 @@ VNA.SetStopFreq("8E9")
 VNA.SetNumPoint("101")
 
 LS350.SetHeaterRange(5)
+StopTemperature = 2
 
-f = open('20160618_TempSweep_NbCry152nmA2_GoUp1.csv', 'w')
+f = open('20160815_TempSweep_ALMKID_GoUp.csv', 'w')
 fwrite = csv.writer(f)
 
 for k in range(0, 14400): 
@@ -39,11 +40,11 @@ for k in range(0, 14400):
     Stage_TempD = float(LS350.GetTemp("D"))
     fwrite.writerow([k, Stage_TempA, Stage_TempB, Stage_TempC, Stage_TempD]+y_array_log.tolist())
 
-    T = k * 0.002
+    T = k * 0.001
     print Stage_TempD, T
     LS350.SetPoint(T)
     time.sleep(1)
-    if (Stage_TempD > 12)&( T>12):
+    if (Stage_TempD > StopTemperature) & (T > StopTemperature):
         break
     print k, Stage_TempD
 f.close()
